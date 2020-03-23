@@ -7,7 +7,9 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "localization/private/data_synchronizer.h"
+#include "localization/private/odometry.h"
 #include "localization/localization.h"
+#include "localization/init.h"
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
@@ -15,12 +17,16 @@ int main(int argc, char *argv[]) {
 
     // magic!
     rclcpp::NodeOptions options;
-    options.use_intra_process_comms(true);
+    options.use_intra_process_comms(false);
 
-    auto publisher_node = std::make_shared<DataSynchronizer>(options);
-    auto subscriber_node = std::make_shared<Localization>(options);
-    exec.add_node(publisher_node);
-    exec.add_node(subscriber_node);
+    auto route = init();
+
+    auto data_synchronizer = std::make_shared<DataSynchronizer>(options);
+    auto odometry = std::make_shared<Odometry>(route, options);
+    auto localization = std::make_shared<Localization>(route, options);
+    exec.add_node(data_synchronizer);
+    exec.add_node(odometry);
+    exec.add_node(localization);
     exec.spin();
     rclcpp::shutdown();
     return 0;

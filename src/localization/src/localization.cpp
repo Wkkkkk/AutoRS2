@@ -3,32 +3,32 @@
 //
 
 #include "localization/localization.h"
+#include "localization/private/scan_transform.h"
 
 Localization::Localization(Route::Ptr activeRoute, const rclcpp::NodeOptions &options)
-        : Node("localization", options), activeRoute_(activeRoute),
-          loam_mapp_matcher(new lins::lego_loam::LOAMMappingMatcherLego) {
+        : Node("localization", options), activeRoute_(activeRoute) {
 
-    subscription_ = this->create_subscription<Measurement>(
-            "/test", 10, std::bind(&Localization::MeasurementCallback, this, std::placeholders::_1));
+    loam_mapp_matcher = std::make_unique<lins::lego_loam::LOAMMappingMatcherLego>(activeRoute->globalCorner,
+                                                                                  activeRoute->globalSurf,
+                                                                                  activeRoute->mapCornerKDTree,
+                                                                                  activeRoute->mapSurfKDTree);
+
+    scan_subscription_ = this->create_subscription<ScanROS>(
+            "/scan", 10, std::bind(&Localization::ScanCallback, this, std::placeholders::_1));
 }
 
-void Localization::MeasurementCallback(message::msg::Measurement::SharedPtr msg) {
-
+void Localization::ScanCallback(ScanROS::SharedPtr msg) {
     if (!has_init) {
-        //prevLocalizationScan = odom_scan_buffer_.Pop().first;
+        prevLocalizationScan = importFromRosMsg(*msg);
 
         has_init = true;
         return;
     }
 
-    Scan::Ptr scan;// = odomScanBuffer.front().first;
-    std::vector<GPSReading::Ptr> validGPSPts;// = odomScanBuffer.front().second;
+    Scan::Ptr scan;
 
     if (has_init) {
-        auto current_scan = odom_scan_buffer_.Pop();
-
-        scan = current_scan.first;
-        validGPSPts = current_scan.second;
+        scan = importFromRosMsg(*msg);
     }
 
     /// Mapp matching
@@ -72,7 +72,7 @@ void Localization::MeasurementCallback(message::msg::Measurement::SharedPtr msg)
     float length_x = sqrt(
             transform_x[0] * transform_x[0] + transform_x[1] * transform_x[1] + transform_x[2] * transform_x[2]);
 
-    pcl::PointCloud<PointRawT>::Ptr mapRectCloud(new pcl::PointCloud <PointRawT>);
+    pcl::PointCloud<lins::PointRawT>::Ptr mapRectCloud(new pcl::PointCloud <lins::PointRawT>);
     pcl::transformPointCloud(scan->rawScan, //raw
                              *mapRectCloud,
                              offset,

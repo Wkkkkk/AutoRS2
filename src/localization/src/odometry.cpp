@@ -4,6 +4,7 @@
 
 #include <pcl_conversions/pcl_conversions.h>
 
+#include "localization/private/scan_transform.h"
 #include "localization/private/odometry.h"
 //#include "driver/point_type.h"
 
@@ -11,7 +12,9 @@ Odometry::Odometry(Route::Ptr activeRoute, const rclcpp::NodeOptions &options)
         : Node("Odometry", options), activeRoute_(activeRoute), prevScan(nullptr), gpsfilter(new GPSFilter),
           loam_odom_matcher(new lins::lego_loam::LOAMOdometryMatcherLego()) {
 
-    subscription_ = this->create_subscription<Measurement>(
+    scan_publisher = this->create_publisher<ScanROS>("/scan", 10);
+
+    measurement_subscription_ = this->create_subscription<Measurement>(
             "/measurements", 10, std::bind(&Odometry::MeasurementCallback, this, std::placeholders::_1));
 }
 
@@ -81,8 +84,7 @@ void Odometry::init(Measurement::SharedPtr msg) {
     initTraj->data.emplace_back(initScan->timestamp, initScan->poseMapp);
 
     prevScan = initScan;
-
-//    odom_scan_buffer_.Push(ScanGPS(initScan, std::vector<GPSReading::Ptr>()));
+    poseMsg(initScan);
 
     status_ = Status::INITIAL;
 }
@@ -118,5 +120,10 @@ void Odometry::process(Measurement::SharedPtr msg) {
     }
 
     prevScan = scan;
-//    odom_scan_buffer_.Push(ScanGPS(scan, validGPSPts));
+    poseMsg(scan);
+}
+
+void Odometry::poseMsg(Scan::Ptr scan) {
+    auto ros_msg = exportToRosMsg(scan);
+    scan_publisher->publish(ros_msg);
 }

@@ -12,7 +12,7 @@ DataSynchronizer::DataSynchronizer(const rclcpp::NodeOptions &options)
             "/transformed_points", 10,
             std::bind(&DataSynchronizer::PointCloudDataCallback, this, std::placeholders::_1));
 
-    measurement_publisher = this->create_publisher<Measurement>("/measurements", 10);
+    measurement_publisher_ = this->create_publisher<Measurement>("/measurements", 10);
 }
 
 void DataSynchronizer::IMUDataCallback(IMUDataType::SharedPtr msg) {
@@ -35,5 +35,5 @@ void DataSynchronizer::PointCloudDataCallback(PointCloudDataType::SharedPtr msg)
     // TODO avoid this copy
     measurement->pointcloud = std::move(*msg);
 
-    measurement_publisher->publish(std::move(measurement));
+    measurement_publisher_->publish(std::move(measurement));
 }

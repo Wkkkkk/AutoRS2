@@ -25,6 +25,7 @@ find_package(ament_cmake REQUIRED)
 find_package(roscpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(message REQUIRED)
 find_package(driver REQUIRED)
 
@@ -57,10 +58,12 @@ add_library(localization_nodes SHARED
         src/gps_filter.cpp
         src/data_synchronizer.cpp
         src/odometry.cpp
+        src/scan_transform.cpp
+        src/init.cpp
         )
 target_compile_definitions(localization_nodes
         PRIVATE "MINIMAL_COMPOSITION_DLL")
-ament_target_dependencies(localization_nodes rclcpp rclcpp_components sensor_msgs message driver)
+ament_target_dependencies(localization_nodes rclcpp rclcpp_components sensor_msgs geometry_msgs message driver)
 target_link_libraries(localization_nodes
         ${PCL_LIBRARIES}
         ${OpenCV_LIBRARIES}
@@ -75,6 +78,8 @@ target_link_libraries(localization_nodes
         glog::glog
         ceres
         )
+message(STATUS ">>>>>>>>>>>>>FOUND PCL: ${PCL_LIBRARIES}")
+
 
 add_executable(localization src/localization_test.cpp)
 ament_target_dependencies(localization rclcpp)

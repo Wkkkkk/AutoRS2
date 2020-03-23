@@ -11,11 +11,13 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "message/msg/measurement.hpp"
+#include "message/msg/scan.hpp"
 #include "localization/private/gps_filter.h"
 
 class Odometry : public rclcpp::Node {
 public:
     using Measurement = message::msg::Measurement;
+    using ScanROS = message::msg::Scan;
 
     explicit Odometry(Route::Ptr activeRoute, const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
 
@@ -25,6 +27,8 @@ private:
     void process(Measurement::SharedPtr msg);
 
     void MeasurementCallback(Measurement::SharedPtr msg);
+
+    void poseMsg(Scan::Ptr scan);
 
     enum class Status {
         UNINITIAL, INITIAL, WAITING, SUCESS, LOST
@@ -37,7 +41,8 @@ private:
     std::unique_ptr <GPSFilter> gpsfilter;
     std::unique_ptr <lins::lego_loam::LOAMOdometryMatcherLego> loam_odom_matcher;
 
-    rclcpp::Subscription<Measurement>::SharedPtr subscription_;
+    rclcpp::Publisher<ScanROS>::SharedPtr scan_publisher;
+    rclcpp::Subscription<Measurement>::SharedPtr measurement_subscription_;
 };
 
 

@@ -36,7 +36,7 @@ private:
     rclcpp::Subscription<IMUDataType>::SharedPtr imu_subscription_;
     rclcpp::Subscription<PointCloudDataType>::SharedPtr pointcloud_subscription_;
 
-    rclcpp::Publisher<Measurement>::SharedPtr measurement_publisher;
+    rclcpp::Publisher<Measurement>::SharedPtr measurement_publisher_;
 };
 
 #endif //LOCALIZATION_DATA_SYNCHRONIZER_H
